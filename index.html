@@ -1,0 +1,1418 @@
+<!doctype html>
+<html lang="ko" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My System — 나만의 시스템</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          boxShadow: {
+            soft: '0 10px 30px rgba(0,0,0,.10)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* 작은 성취감 애니메이션 */
+    @keyframes pop {
+      0% { transform: scale(.98); filter: saturate(1); }
+      50% { transform: scale(1.02); filter: saturate(1.2); }
+      100% { transform: scale(1); filter: saturate(1); }
+    }
+    .pop { animation: pop 220ms ease-out; }
+    .glass {
+      background: rgba(255,255,255,.6);
+      backdrop-filter: blur(10px);
+    }
+    .dark .glass {
+      background: rgba(17,24,39,.55);
+    }
+    .drag-ghost {
+      opacity: .55;
+      transform: rotate(-1deg);
+    }
+    .slot-hover {
+      outline: 2px dashed rgba(99,102,241,.55);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+
+<body class="h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <div class="min-h-full">
+    <main class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <!-- ========================================================= -->
+      <!-- Top Header - 나의 시스템 현황 (내가 선택/설계하는 대시보드) -->
+      <!-- ========================================================= -->
+      <section class="glass rounded-2xl border border-slate-200/70 dark:border-slate-800/70 shadow-soft p-5 sm:p-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div class="space-y-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="todayText" class="text-sm font-medium text-slate-600 dark:text-slate-300"></span>
+              <span class="text-slate-300 dark:text-slate-700">·</span>
+              <span id="dayXText" class="text-sm font-semibold text-indigo-600 dark:text-indigo-400"></span>
+            </div>
+
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label class="text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 w-24">현재 목표</label>
+              <input id="goalTitle" class="w-full sm:w-[520px] rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                     placeholder="예: HTML 마스터하기" />
+            </div>
+
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div class="rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/65 dark:bg-slate-900/50 p-3">
+                <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">목표 날짜 (D-Day)</div>
+                <div class="mt-2 flex items-center gap-2">
+                  <input id="goalDate" type="date" class="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/40 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div class="mt-2 text-sm font-semibold">
+                  <span id="dDayText" class="text-slate-700 dark:text-slate-200">D-?</span>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/65 dark:bg-slate-900/50 p-3">
+                <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">🔥 Streak</div>
+                <div class="mt-2 text-2xl font-extrabold tracking-tight">
+                  <span id="streakText">0</span><span class="text-sm font-semibold text-slate-500 dark:text-slate-400"> 일</span>
+                </div>
+                <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">“내가 만든 시스템을 내가 지킨다”</div>
+              </div>
+
+              <div class="rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/65 dark:bg-slate-900/50 p-3">
+                <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">테마</div>
+                <div class="mt-2 flex items-center justify-between gap-3">
+                  <div class="text-sm font-semibold text-slate-700 dark:text-slate-200" id="themeLabel">Light</div>
+                  <button id="themeToggle"
+                          class="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 px-4 py-2 text-sm font-semibold hover:bg-white dark:hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    다크/라이트 토글
+                  </button>
+                </div>
+                <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">집중이 잘 되는 차분한 톤</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-950 p-4 sm:p-5 w-full sm:w-[340px]">
+            <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">오늘의 확언 한 줄</div>
+            <textarea id="affirmation" rows="4"
+              class="mt-2 w-full resize-none rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="예: 나는 작은 습관으로 큰 흐름을 만든다."></textarea>
+            <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">내가 쓰고 내가 믿는 문장</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2열 레이아웃 (모바일 1열) -->
+      <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- ========================================================= -->
+        <!-- 루틴 설계 섹션 (Routine Designer) -->
+        <!-- ========================================================= -->
+        <section class="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 shadow-soft p-5 sm:p-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-extrabold tracking-tight">Routine Designer</h2>
+              <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">“오늘의 최소 루틴 3가지”를 <span class="font-semibold text-indigo-600 dark:text-indigo-400">내가 직접 설계</span>한다.</p>
+            </div>
+            <button id="hintBtn"
+              class="shrink-0 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+              실패할 수 없는 힌트
+            </button>
+          </div>
+
+          <div class="mt-4 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 p-4">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div class="sm:col-span-2">
+                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">루틴 이름</label>
+                <input id="routineName" class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="예: HTML 태그 3개 복습" />
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">최소 시간 (1~5분)</label>
+                <input id="routineMin" type="number" min="1" max="5" value="2"
+                  class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div class="sm:col-span-3">
+                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">트리거 (언제/무엇 직후?)</label>
+                <input id="routineTrigger" class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="예: 커피 마신 직후 / 노트북 켠 직후" />
+              </div>
+            </div>
+
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button id="addRoutineBtn"
+                class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2 text-sm font-bold hover:bg-white dark:hover:bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                루틴 추가
+              </button>
+              <button id="seed3Btn"
+                class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                오늘 최소 3개 빠르게 만들기
+              </button>
+              <div class="ml-auto text-xs text-slate-500 dark:text-slate-400 flex items-center">
+                <span id="routineCountText">0</span><span class="ml-1">개 설계됨</span>
+              </div>
+            </div>
+
+            <div id="hintBox" class="mt-3 hidden rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/80 dark:bg-indigo-950/30 p-3 text-sm text-slate-700 dark:text-slate-200"></div>
+          </div>
+
+          <div class="mt-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-100">오늘의 루틴 목록</h3>
+              <button id="clearRoutinesBtn" class="text-xs font-semibold text-slate-500 hover:text-rose-600 dark:hover:text-rose-400">
+                전체 초기화
+              </button>
+            </div>
+            <ul id="routineList" class="mt-3 space-y-2"></ul>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 습관 스태킹 (Habit Stacking) -->
+        <!-- ========================================================= -->
+        <section class="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 shadow-soft p-5 sm:p-6">
+          <h2 class="text-lg font-extrabold tracking-tight">Habit Stacking</h2>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">“기존 일상 + 새로운 루틴”을 조합해 <span class="font-semibold text-indigo-600 dark:text-indigo-400">내 시스템에 연결</span>한다.</p>
+
+          <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 p-4">
+              <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">기존 일상</div>
+              <input id="existingHabit" class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="예: 양치 후" />
+            </div>
+            <div class="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 p-4">
+              <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">새로운 루틴</div>
+              <input id="newHabit" class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="예: HTML 문법 1개 메모" />
+            </div>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button id="addStackBtn"
+              class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+              조합 추가
+            </button>
+            <button id="showExamplesBtn"
+              class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2 text-sm font-bold hover:bg-white dark:hover:bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              예시 자동 표시
+            </button>
+            <div class="ml-auto text-xs text-slate-500 dark:text-slate-400">
+              <span id="stackCountText">0</span>개 연결됨
+            </div>
+          </div>
+
+          <ul id="stackList" class="mt-4 space-y-2"></ul>
+        </section>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- 오늘의 타임라인 (내가 직접 만드는 시간표 + 드래그&드롭) -->
+      <!-- ========================================================= -->
+      <section class="mt-6 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 shadow-soft p-5 sm:p-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 class="text-lg font-extrabold tracking-tight">오늘의 타임라인</h2>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">시간은 “명령”이 아니라, <span class="font-semibold text-indigo-600 dark:text-indigo-400">내가 배치하는 도구</span>다.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 px-3 py-2">
+              <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">총 자유 시간(분)</div>
+              <div class="mt-1 flex items-center gap-2">
+                <input id="freeMinutes" type="number" min="0" value="120"
+                  class="w-28 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500" />
+                <button id="autoPlanBtn"
+                  class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                  자동 분배 추천
+                </button>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 px-3 py-2">
+              <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Pomodoro</div>
+              <div class="mt-1 flex items-center gap-2">
+                <select id="pomoMode" class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="25">25/5 (Deep Work)</option>
+                  <option value="15">15/3 (가볍게)</option>
+                  <option value="50">50/10 (몰입)</option>
+                </select>
+                <button id="pomoStartBtn" class="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-bold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  시작/정지
+                </button>
+              </div>
+              <div class="mt-1 text-sm font-extrabold tracking-tight">
+                <span id="pomoText">25:00</span>
+                <span id="pomoPhase" class="ml-2 text-xs font-semibold text-slate-500 dark:text-slate-400">FOCUS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-1">
+            <div class="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 p-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-extrabold">블록 팔레트</h3>
+                <button id="clearTimelineBtn" class="text-xs font-semibold text-slate-500 hover:text-rose-600 dark:hover:text-rose-400">타임라인 초기화</button>
+              </div>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">아래 블록을 끌어서 시간 슬롯에 놓기</p>
+
+              <div class="mt-3 space-y-2">
+                <div draggable="true" data-kind="deep" class="dragItem rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/80 dark:bg-indigo-950/25 px-4 py-3">
+                  <div class="text-sm font-extrabold text-indigo-700 dark:text-indigo-300">Deep Work</div>
+                  <div class="text-xs text-slate-600 dark:text-slate-300">몰입 블록</div>
+                </div>
+                <div draggable="true" data-kind="refresh" class="dragItem rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/80 dark:bg-emerald-950/25 px-4 py-3">
+                  <div class="text-sm font-extrabold text-emerald-700 dark:text-emerald-300">Refresh</div>
+                  <div class="text-xs text-slate-600 dark:text-slate-300">회복/정리</div>
+                </div>
+                <div draggable="true" data-kind="routine" class="dragItem rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/80 dark:bg-amber-950/25 px-4 py-3">
+                  <div class="text-sm font-extrabold text-amber-700 dark:text-amber-300">루틴 실행</div>
+                  <div class="text-xs text-slate-600 dark:text-slate-300">내가 만든 습관</div>
+                </div>
+              </div>
+
+              <div class="mt-4 rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-950/20 p-3">
+                <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">블록 이름(옵션)</div>
+                <input id="blockLabel" class="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="예: Flexbox 복습 / 산책" />
+                <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">끌기 전에 입력하면 블록에 표시돼요.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-2">
+            <div class="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 p-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-extrabold">시간 슬롯 (15분 x 12 = 3시간)</h3>
+                <div class="text-xs text-slate-500 dark:text-slate-400">드롭 후 클릭하면 삭제</div>
+              </div>
+              <div id="timelineGrid" class="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- 습관 체크리스트 (체크 + 애니메이션 + 진행률) -->
+      <!-- ========================================================= -->
+      <section class="mt-6 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 shadow-soft p-5 sm:p-6">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 class="text-lg font-extrabold tracking-tight">오늘의 습관 체크리스트</h2>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">체크는 “칭찬”이 아니라, <span class="font-semibold text-indigo-600 dark:text-indigo-400">내가 만든 증거</span>다.</p>
+          </div>
+          <div class="text-sm font-semibold">
+            <span id="progressText">0%</span>
+          </div>
+        </div>
+
+        <div class="mt-3 h-3 w-full rounded-full bg-slate-200/70 dark:bg-slate-800/70 overflow-hidden">
+          <div id="progressBar" class="h-full w-0 rounded-full bg-indigo-600 transition-[width] duration-300"></div>
+        </div>
+
+        <div id="checklist" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="markAllDoneBtn"
+            class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            오늘 루틴 전부 완료
+          </button>
+          <button id="resetChecksBtn"
+            class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2 text-sm font-bold hover:bg-white dark:hover:bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            체크 초기화
+          </button>
+          <div class="ml-auto text-xs text-slate-500 dark:text-slate-400 flex items-center">
+            <span id="doneCountText">0</span><span class="ml-1">/</span><span id="totalCountText">0</span><span class="ml-1">완료</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- 성장 리포트 (Study Log + Self Reflection + 차트 + 오답창고) -->
+      <!-- ========================================================= -->
+      <section class="mt-6 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 shadow-soft p-5 sm:p-6">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 class="text-lg font-extrabold tracking-tight">성장 리포트</h2>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">기록은 “감시”가 아니라, <span class="font-semibold text-indigo-600 dark:text-indigo-400">내 성장의 지도</span>다.</p>
+          </div>
+          <div class="rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 px-4 py-2">
+            <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">이번 주 성장률</div>
+            <div class="text-2xl font-extrabold tracking-tight"><span id="weeklyGrowthText">0</span><span class="text-sm font-semibold text-slate-500 dark:text-slate-400">%</span></div>
+          </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-2 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 p-4">
+            <h3 class="text-sm font-extrabold">Study Log</h3>
+            <div class="mt-3 grid grid-cols-1 gap-3">
+              <div>
+                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">오늘 배운 내용</label>
+                <textarea id="logLearned" rows="3" class="mt-1 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="예: 시맨틱 태그, 폼 요소, 기본 레이아웃 흐름"></textarea>
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">어려웠던 점</label>
+                <textarea id="logHard" rows="3" class="mt-1 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="예: margin collapsing, flex 정렬 직관"></textarea>
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">뿌듯했던 순간</label>
+                <textarea id="logProud" rows="3" class="mt-1 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="예: 내가 만든 루틴 3개를 가볍게라도 완료했다"></textarea>
+              </div>
+
+              <div class="rounded-2xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/80 dark:bg-indigo-950/25 p-4">
+                <div class="text-sm font-extrabold text-slate-900 dark:text-slate-100">셀프 피드백</div>
+                <div class="mt-2 text-sm text-slate-700 dark:text-slate-200">
+                  지난주보다 <input id="deltaGrowth" type="number" class="mx-1 w-20 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-indigo-500" value="5" />% 성장했어.
+                </div>
+                <div class="mt-2">
+                  <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">가장 잘한 순간은?</label>
+                  <input id="bestMoment" class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="예: 막힐 때도 2분 루틴으로 다시 시동 걸었다" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-1 space-y-4">
+            <div class="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 p-4">
+              <h3 class="text-sm font-extrabold">간단 차트</h3>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">최근 7일 “루틴 완료율” 기반</p>
+              <canvas id="chart" width="400" height="220" class="mt-3 w-full rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-950/20"></canvas>
+              <div class="mt-3 flex items-center gap-2">
+                <button id="recalcWeekBtn" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  이번 주 성장률 재계산
+                </button>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 p-4">
+              <h3 class="text-sm font-extrabold">오답 창고</h3>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">모르는 개념을 “보관”해두고, 다음 루틴의 재료로 쓰기</p>
+
+              <div class="mt-3 space-y-2">
+                <input id="mistakeTitle" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="제목: 예) position이 헷갈림" />
+                <textarea id="mistakeNote" rows="3" class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="메모: 예) relative/absolute 기준, stacking context..."></textarea>
+                <input id="mistakeImage" type="file" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-indigo-500" />
+                <button id="addMistakeBtn" class="w-full rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                  오답 저장
+                </button>
+              </div>
+
+              <ul id="mistakeList" class="mt-4 space-y-2"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- Footer - 로컬 저장 안내 -->
+      <!-- ========================================================= -->
+      <section class="mt-6 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50/70 dark:bg-slate-950/30 p-5">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div class="text-sm font-semibold">
+            모든 데이터는 <span class="text-indigo-600 dark:text-indigo-400">localStorage</span>에 자동 저장됩니다.
+          </div>
+          <button id="exportBtn" class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/30 px-4 py-2 text-sm font-bold hover:bg-white dark:hover:bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            데이터 JSON 내보내기
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // ---------------------------
+    // localStorage 키
+    // ---------------------------
+    const LS_KEY = 'my-system:v1';
+
+    // ---------------------------
+    // 유틸
+    // ---------------------------
+    const $ = (id) => document.getElementById(id);
+    const todayISO = () => new Date().toISOString().slice(0,10);
+    const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+    const safeJSON = (x, fallback) => { try { return JSON.parse(x); } catch { return fallback; } };
+
+    function formatKDate(d = new Date()) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+      return `${y}.${m}.${day} (${dow})`;
+    }
+
+    function daysBetween(aISO, bISO) {
+      const a = new Date(aISO + 'T00:00:00');
+      const b = new Date(bISO + 'T00:00:00');
+      const diff = (b - a) / 86400000;
+      return Math.round(diff);
+    }
+
+    // ---------------------------
+    // 상태
+    // ---------------------------
+    const defaultState = {
+      theme: 'light',
+      systemStartDate: todayISO(),
+      goalTitle: '',
+      goalDate: '',
+      affirmation: '나는 작은 습관으로 큰 흐름을 만든다.',
+      routines: [],
+      stacks: [],
+      checksByDate: {},         // { 'YYYY-MM-DD': { routineId: true/false } }
+      completionByDate: {},     // { 'YYYY-MM-DD': completionPercent }
+      timelineSlots: Array.from({length: 12}, () => null), // 15분 x 12
+      freeMinutes: 120,
+      pomo: { modeMinutes: 25, isRunning: false, phase: 'FOCUS', remainSec: 25*60, lastTick: null },
+      logsByDate: {},           // { date: { learned, hard, proud, deltaGrowth, bestMoment } }
+      mistakes: [],             // { id, title, note, imageDataUrl, createdAtISO }
+    };
+
+    let state = loadState();
+
+    function loadState() {
+      const raw = localStorage.getItem(LS_KEY);
+      const s = raw ? safeJSON(raw, null) : null;
+      const merged = { ...defaultState, ...(s || {}) };
+
+      if (!merged.systemStartDate) merged.systemStartDate = todayISO();
+      if (!merged.pomo || typeof merged.pomo !== 'object') merged.pomo = structuredClone(defaultState.pomo);
+
+      if (!Array.isArray(merged.timelineSlots) || merged.timelineSlots.length !== 12) {
+        merged.timelineSlots = structuredClone(defaultState.timelineSlots);
+      }
+      if (!merged.routines) merged.routines = [];
+      if (!merged.stacks) merged.stacks = [];
+      if (!merged.checksByDate) merged.checksByDate = {};
+      if (!merged.completionByDate) merged.completionByDate = {};
+      if (!merged.logsByDate) merged.logsByDate = {};
+      if (!merged.mistakes) merged.mistakes = [];
+
+      return merged;
+    }
+
+    function saveState() {
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+    }
+
+    // ---------------------------
+    // 테마
+    // ---------------------------
+    function applyTheme() {
+      const isDark = state.theme === 'dark';
+      document.documentElement.classList.toggle('dark', isDark);
+      $('themeLabel').textContent = isDark ? 'Dark' : 'Light';
+    }
+
+    $('themeToggle').addEventListener('click', () => {
+      state.theme = (state.theme === 'dark') ? 'light' : 'dark';
+      applyTheme();
+      saveState();
+    });
+
+    // ---------------------------
+    // 헤더 표시 (Day X, D-Day)
+    // ---------------------------
+    function renderHeader() {
+      $('todayText').textContent = `오늘: ${formatKDate(new Date())}`;
+
+      const dayX = daysBetween(state.systemStartDate, todayISO()) + 1;
+      $('dayXText').textContent = `나만의 시스템 Day ${Math.max(1, dayX)}`;
+
+      $('goalTitle').value = state.goalTitle || '';
+      $('goalDate').value = state.goalDate || '';
+      $('affirmation').value = state.affirmation || '';
+
+      const d = state.goalDate ? daysBetween(todayISO(), state.goalDate) : null;
+      if (d === null || Number.isNaN(d)) {
+        $('dDayText').textContent = 'D-?';
+      } else if (d === 0) {
+        $('dDayText').textContent = 'D-Day';
+      } else if (d > 0) {
+        $('dDayText').textContent = `D-${d}`;
+      } else {
+        $('dDayText').textContent = `D+${Math.abs(d)}`;
+      }
+
+      $('streakText').textContent = String(calcStreak());
+    }
+
+    $('goalTitle').addEventListener('input', (e) => {
+      state.goalTitle = e.target.value;
+      saveState();
+    });
+
+    $('goalDate').addEventListener('change', (e) => {
+      state.goalDate = e.target.value;
+      renderHeader();
+      saveState();
+    });
+
+    $('affirmation').addEventListener('input', (e) => {
+      state.affirmation = e.target.value;
+      saveState();
+    });
+
+    // ---------------------------
+    // 루틴 설계
+    // ---------------------------
+    const hintSamples = [
+      { name: '노트 열고 오늘 목표 1줄 쓰기', min: 1, trigger: '노트북 켠 직후' },
+      { name: 'HTML 태그 3개 소리 내서 읽기', min: 2, trigger: '커피 마신 직후' },
+      { name: '어제 막힌 개념 1개만 다시 보기', min: 3, trigger: '점심 먹고 자리 앉자마자' },
+      { name: '코드 5줄 타이핑 (복붙 금지)', min: 2, trigger: '브라우저 열기 직후' },
+      { name: '1분 정리: 오늘 “다음 행동”만 적기', min: 1, trigger: '잠들기 전' },
+    ];
+
+    function uid(prefix='id') {
+      return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
+    }
+
+    function addRoutine({ name, min, trigger }) {
+      const trimmed = (name || '').trim();
+      const trig = (trigger || '').trim();
+      const minutes = clamp(parseInt(min || 1, 10) || 1, 1, 5);
+
+      if (!trimmed) return;
+
+      state.routines.push({
+        id: uid('routine'),
+        name: trimmed,
+        min: minutes,
+        trigger: trig,
+        createdAt: new Date().toISOString()
+      });
+
+      // 오늘 체크 상태에 새 루틴 반영
+      const d = todayISO();
+      state.checksByDate[d] = state.checksByDate[d] || {};
+      state.checksByDate[d][state.routines[state.routines.length - 1].id] = false;
+
+      saveState();
+      renderRoutines();
+      renderChecklist();
+      updateCompletionForToday();
+    }
+
+    function renderRoutines() {
+      const ul = $('routineList');
+      ul.innerHTML = '';
+
+      $('routineCountText').textContent = String(state.routines.length);
+
+      state.routines.forEach((r) => {
+        const li = document.createElement('li');
+        li.className = 'rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/75 dark:bg-slate-950/25 p-3';
+
+        li.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="font-extrabold text-slate-900 dark:text-slate-100 truncate">${escapeHTML(r.name)}</div>
+                <span class="rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-2 py-0.5 text-xs font-bold">${r.min}분</span>
+              </div>
+              <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                트리거: <span class="font-semibold text-slate-700 dark:text-slate-200">${escapeHTML(r.trigger || '미지정')}</span>
+              </div>
+            </div>
+            <button data-id="${r.id}" class="deleteRoutineBtn shrink-0 text-xs font-bold text-slate-500 hover:text-rose-600 dark:hover:text-rose-400">
+              삭제
+            </button>
+          </div>
+        `;
+        ul.appendChild(li);
+      });
+
+      ul.querySelectorAll('.deleteRoutineBtn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          state.routines = state.routines.filter(r => r.id !== id);
+
+          // 체크 상태에서 제거
+          const d = todayISO();
+          if (state.checksByDate[d]) delete state.checksByDate[d][id];
+
+          saveState();
+          renderRoutines();
+          renderChecklist();
+          updateCompletionForToday();
+        });
+      });
+    }
+
+    function showHint() {
+      const pick = hintSamples[Math.floor(Math.random() * hintSamples.length)];
+      $('hintBox').classList.remove('hidden');
+      $('hintBox').innerHTML = `
+        <div class="font-extrabold">힌트: “실패할 수 없는 작은 습관”</div>
+        <div class="mt-1">- 루틴 이름: <span class="font-semibold">${escapeHTML(pick.name)}</span></div>
+        <div>- 최소 시간: <span class="font-semibold">${pick.min}분</span></div>
+        <div>- 트리거: <span class="font-semibold">${escapeHTML(pick.trigger)}</span></div>
+        <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">원하면 그대로 “루틴 추가”에 넣고 저장해도 좋아요.</div>
+      `;
+
+      // 폼에 자동 채우기 (내가 선택해 적용하는 느낌)
+      $('routineName').value = pick.name;
+      $('routineMin').value = pick.min;
+      $('routineTrigger').value = pick.trigger;
+    }
+
+    $('hintBtn').addEventListener('click', showHint);
+
+    $('addRoutineBtn').addEventListener('click', () => {
+      addRoutine({
+        name: $('routineName').value,
+        min: $('routineMin').value,
+        trigger: $('routineTrigger').value
+      });
+      $('routineName').value = '';
+      $('routineTrigger').value = '';
+      $('routineMin').value = 2;
+    });
+
+    $('seed3Btn').addEventListener('click', () => {
+      const picks = [...hintSamples].sort(() => Math.random() - 0.5).slice(0, 3);
+      picks.forEach(p => addRoutine(p));
+    });
+
+    $('clearRoutinesBtn').addEventListener('click', () => {
+      if (!confirm('오늘 루틴 설계를 전체 초기화할까요? (되돌릴 수 없어요)')) return;
+      const d = todayISO();
+      state.routines = [];
+      state.checksByDate[d] = {};
+      saveState();
+      renderRoutines();
+      renderChecklist();
+      updateCompletionForToday();
+      renderHeader();
+      renderChartAndGrowth();
+    });
+
+    // ---------------------------
+    // Habit Stacking
+    // ---------------------------
+    const stackExamples = [
+      { existing: '양치 후', next: 'HTML 태그 3개 복습' },
+      { existing: '커피 한 모금 후', next: 'CSS 속성 1개 정리' },
+      { existing: '노트북 켠 직후', next: '오늘 목표 1줄 쓰기' },
+      { existing: '점심 먹고 자리 앉자마자', next: '막힌 개념 1개만 다시 보기' }
+    ];
+
+    function renderStacks() {
+      $('stackCountText').textContent = String(state.stacks.length);
+      const ul = $('stackList');
+      ul.innerHTML = '';
+      state.stacks.forEach((s) => {
+        const li = document.createElement('li');
+        li.className = 'rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/75 dark:bg-slate-950/25 p-3';
+        li.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-sm font-extrabold text-slate-900 dark:text-slate-100 truncate">
+                ${escapeHTML(s.existing)} + ${escapeHTML(s.next)}
+              </div>
+              <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">${escapeHTML(s.note || '연결 고리(설명) 없음')}</div>
+            </div>
+            <div class="shrink-0 flex items-center gap-2">
+              <button data-id="${s.id}" class="editStackBtn text-xs font-bold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">편집</button>
+              <button data-id="${s.id}" class="deleteStackBtn text-xs font-bold text-slate-500 hover:text-rose-600 dark:hover:text-rose-400">삭제</button>
+            </div>
+          </div>
+        `;
+        ul.appendChild(li);
+      });
+
+      ul.querySelectorAll('.deleteStackBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          state.stacks = state.stacks.filter(x => x.id !== id);
+          saveState();
+          renderStacks();
+        });
+      });
+
+      ul.querySelectorAll('.editStackBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const s = state.stacks.find(x => x.id === id);
+          if (!s) return;
+
+          const existing = prompt('기존 일상', s.existing) ?? s.existing;
+          const next = prompt('새로운 루틴', s.next) ?? s.next;
+          const note = prompt('메모(옵션)', s.note || '') ?? (s.note || '');
+
+          s.existing = existing.trim() || s.existing;
+          s.next = next.trim() || s.next;
+          s.note = note.trim();
+          saveState();
+          renderStacks();
+        });
+      });
+    }
+
+    $('addStackBtn').addEventListener('click', () => {
+      const existing = $('existingHabit').value.trim();
+      const next = $('newHabit').value.trim();
+      if (!existing || !next) return;
+
+      state.stacks.push({
+        id: uid('stack'),
+        existing,
+        next,
+        note: `${existing} 다음에 ${next}로 연결`,
+        createdAt: new Date().toISOString()
+      });
+
+      $('existingHabit').value = '';
+      $('newHabit').value = '';
+      saveState();
+      renderStacks();
+    });
+
+    $('showExamplesBtn').addEventListener('click', () => {
+      const picks = [...stackExamples].sort(() => Math.random() - 0.5).slice(0, 3);
+      picks.forEach(p => {
+        state.stacks.push({
+          id: uid('stack'),
+          existing: p.existing,
+          next: p.next,
+          note: `${p.existing} 다음에 ${p.next}`,
+          createdAt: new Date().toISOString()
+        });
+      });
+      saveState();
+      renderStacks();
+    });
+
+    // ---------------------------
+    // 타임라인 (드래그&드롭)
+    // ---------------------------
+    const SLOT_MIN = 15;
+    const slotLabel = (idx) => {
+      const min = idx * SLOT_MIN;
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} ~ ${String(Math.floor((min+SLOT_MIN)/60)).padStart(2,'0')}:${String((min+SLOT_MIN)%60).padStart(2,'0')}`;
+    };
+
+    let dragging = null;
+
+    function kindStyle(kind) {
+      if (kind === 'deep') return 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/80 dark:bg-indigo-950/25 text-indigo-700 dark:text-indigo-300';
+      if (kind === 'refresh') return 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/80 dark:bg-emerald-950/25 text-emerald-700 dark:text-emerald-300';
+      return 'border-amber-200 dark:border-amber-900/60 bg-amber-50/80 dark:bg-amber-950/25 text-amber-700 dark:text-amber-300';
+    }
+
+    function renderTimeline() {
+      $('freeMinutes').value = state.freeMinutes ?? 0;
+
+      const grid = $('timelineGrid');
+      grid.innerHTML = '';
+
+      for (let i = 0; i < 12; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'slot rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-950/20 p-3 min-h-[78px] flex flex-col justify-between';
+        slot.dataset.idx = String(i);
+
+        const item = state.timelineSlots[i];
+
+        slot.innerHTML = `
+          <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">${slotLabel(i)}</div>
+          <div class="mt-2">
+            ${
+              item
+                ? `<div class="timelineItem rounded-xl border px-3 py-2 ${kindStyle(item.kind)}">
+                     <div class="text-sm font-extrabold">${escapeHTML(item.title || defaultTitle(item.kind))}</div>
+                     <div class="text-[11px] text-slate-600 dark:text-slate-300">${labelKind(item.kind)} · 15분</div>
+                   </div>`
+                : `<div class="text-xs text-slate-400 dark:text-slate-600">여기에 드롭</div>`
+            }
+          </div>
+        `;
+
+        slot.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          slot.classList.add('slot-hover');
+        });
+
+        slot.addEventListener('dragleave', () => slot.classList.remove('slot-hover'));
+
+        slot.addEventListener('drop', (e) => {
+          e.preventDefault();
+          slot.classList.remove('slot-hover');
+          if (!dragging) return;
+
+          const idx = parseInt(slot.dataset.idx, 10);
+          const title = ($('blockLabel').value || '').trim();
+
+          state.timelineSlots[idx] = {
+            kind: dragging.kind,
+            title: title || dragging.title || '',
+            createdAt: new Date().toISOString()
+          };
+
+          $('blockLabel').value = '';
+          saveState();
+          renderTimeline();
+        });
+
+        slot.addEventListener('click', () => {
+          const idx = parseInt(slot.dataset.idx, 10);
+          if (!state.timelineSlots[idx]) return;
+          if (!confirm('이 슬롯의 블록을 삭제할까요?')) return;
+          state.timelineSlots[idx] = null;
+          saveState();
+          renderTimeline();
+        });
+
+        grid.appendChild(slot);
+      }
+    }
+
+    function defaultTitle(kind) {
+      if (kind === 'deep') return 'Deep Work';
+      if (kind === 'refresh') return 'Refresh';
+      return '루틴 실행';
+    }
+
+    function labelKind(kind) {
+      if (kind === 'deep') return 'Deep Work';
+      if (kind === 'refresh') return 'Refresh';
+      return 'Routine';
+    }
+
+    document.querySelectorAll('.dragItem').forEach((el) => {
+      el.addEventListener('dragstart', () => {
+        dragging = { kind: el.dataset.kind, title: '' };
+        el.classList.add('drag-ghost');
+      });
+      el.addEventListener('dragend', () => {
+        dragging = null;
+        el.classList.remove('drag-ghost');
+      });
+    });
+
+    $('freeMinutes').addEventListener('input', (e) => {
+      state.freeMinutes = Math.max(0, parseInt(e.target.value || '0', 10) || 0);
+      saveState();
+    });
+
+    $('autoPlanBtn').addEventListener('click', () => {
+      const free = Math.max(0, parseInt($('freeMinutes').value || '0', 10) || 0);
+      const slotsToFill = clamp(Math.floor(free / 15), 0, 12);
+
+      const plan = [];
+      // 기본 비율: Deep 50%, Refresh 25%, Routine 25% (너무 빡빡하지 않게)
+      const deepN = Math.floor(slotsToFill * 0.5);
+      const rest = slotsToFill - deepN;
+      const refreshN = Math.floor(rest * 0.5);
+      const routineN = slotsToFill - deepN - refreshN;
+
+      for (let i = 0; i < deepN; i++) plan.push({ kind: 'deep', title: 'Deep Work' });
+      for (let i = 0; i < refreshN; i++) plan.push({ kind: 'refresh', title: 'Refresh' });
+      for (let i = 0; i < routineN; i++) plan.push({ kind: 'routine', title: '루틴 실행' });
+
+      // 섞어서 앞 슬롯부터 채우기 (내가 수정/재배치 가능)
+      plan.sort(() => Math.random() - 0.5);
+
+      state.timelineSlots = state.timelineSlots.map((x, idx) => {
+        if (idx < slotsToFill) return plan[idx] || null;
+        return null;
+      });
+
+      saveState();
+      renderTimeline();
+    });
+
+    $('clearTimelineBtn').addEventListener('click', () => {
+      if (!confirm('타임라인을 초기화할까요?')) return;
+      state.timelineSlots = structuredClone(defaultState.timelineSlots);
+      saveState();
+      renderTimeline();
+    });
+
+    // ---------------------------
+    // Pomodoro
+    // ---------------------------
+    let pomoTimer = null;
+
+    function syncPomoUI() {
+      $('pomoMode').value = String(state.pomo.modeMinutes || 25);
+      $('pomoPhase').textContent = state.pomo.phase || 'FOCUS';
+      const mm = Math.floor(state.pomo.remainSec / 60);
+      const ss = state.pomo.remainSec % 60;
+      $('pomoText').textContent = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+    }
+
+    function resetPomoToMode() {
+      const m = parseInt($('pomoMode').value, 10) || 25;
+      state.pomo.modeMinutes = m;
+      state.pomo.phase = 'FOCUS';
+      state.pomo.remainSec = m * 60;
+      state.pomo.lastTick = null;
+      saveState();
+      syncPomoUI();
+    }
+
+    $('pomoMode').addEventListener('change', () => resetPomoToMode());
+
+    function stopPomo() {
+      state.pomo.isRunning = false;
+      if (pomoTimer) clearInterval(pomoTimer);
+      pomoTimer = null;
+      state.pomo.lastTick = null;
+      saveState();
+    }
+
+    function startPomo() {
+      if (pomoTimer) clearInterval(pomoTimer);
+      state.pomo.isRunning = true;
+      state.pomo.lastTick = Date.now();
+
+      pomoTimer = setInterval(() => {
+        const now = Date.now();
+        const dt = Math.floor((now - (state.pomo.lastTick || now)) / 1000);
+        state.pomo.lastTick = now;
+
+        state.pomo.remainSec = Math.max(0, state.pomo.remainSec - Math.max(1, dt || 1));
+
+        if (state.pomo.remainSec <= 0) {
+          // phase 전환: FOCUS -> BREAK -> FOCUS
+          if (state.pomo.phase === 'FOCUS') {
+            state.pomo.phase = 'BREAK';
+            // 휴식은 모드별로 대략 1/5
+            const breakMin = Math.max(3, Math.round(state.pomo.modeMinutes / 5));
+            state.pomo.remainSec = breakMin * 60;
+          } else {
+            state.pomo.phase = 'FOCUS';
+            state.pomo.remainSec = (state.pomo.modeMinutes || 25) * 60;
+          }
+        }
+
+        saveState();
+        syncPomoUI();
+      }, 1000);
+    }
+
+    $('pomoStartBtn').addEventListener('click', () => {
+      if (!state.pomo.isRunning) startPomo();
+      else stopPomo();
+      syncPomoUI();
+    });
+
+    // ---------------------------
+    // 체크리스트 + 진행률 + Streak
+    // ---------------------------
+    function ensureTodayChecks() {
+      const d = todayISO();
+      state.checksByDate[d] = state.checksByDate[d] || {};
+      // 오늘 루틴 기준으로 체크 키 동기화
+      state.routines.forEach(r => {
+        if (typeof state.checksByDate[d][r.id] !== 'boolean') {
+          state.checksByDate[d][r.id] = false;
+        }
+      });
+      // 삭제된 루틴 체크 정리
+      Object.keys(state.checksByDate[d]).forEach(id => {
+        if (!state.routines.some(r => r.id === id)) delete state.checksByDate[d][id];
+      });
+    }
+
+    function renderChecklist() {
+      ensureTodayChecks();
+      const d = todayISO();
+
+      const wrap = $('checklist');
+      wrap.innerHTML = '';
+
+      const total = state.routines.length;
+      const checks = state.checksByDate[d] || {};
+
+      $('totalCountText').textContent = String(total);
+
+      state.routines.forEach((r) => {
+        const checked = !!checks[r.id];
+
+        const card = document.createElement('div');
+        card.className = `rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/75 dark:bg-slate-950/25 p-4 flex items-start gap-3 ${checked ? 'ring-2 ring-indigo-500/30' : ''}`;
+
+        card.innerHTML = `
+          <input type="checkbox" class="mt-1 h-5 w-5 accent-indigo-600" ${checked ? 'checked' : ''} data-id="${r.id}">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <div class="font-extrabold truncate">${escapeHTML(r.name)}</div>
+              <span class="shrink-0 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-2 py-0.5 text-xs font-bold">${r.min}분</span>
+            </div>
+            <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              트리거: <span class="font-semibold text-slate-700 dark:text-slate-200">${escapeHTML(r.trigger || '미지정')}</span>
+            </div>
+          </div>
+        `;
+
+        wrap.appendChild(card);
+
+        const cb = card.querySelector('input[type="checkbox"]');
+        cb.addEventListener('change', () => {
+          checks[r.id] = cb.checked;
+          state.checksByDate[d] = checks;
+          saveState();
+          card.classList.add('pop');
+          setTimeout(() => card.classList.remove('pop'), 250);
+          updateCompletionForToday();
+          renderHeader();
+          renderChartAndGrowth();
+        });
+      });
+
+      updateCompletionForToday(false);
+    }
+
+    function updateCompletionForToday(shouldSave = true) {
+      ensureTodayChecks();
+      const d = todayISO();
+      const total = state.routines.length;
+      const checks = state.checksByDate[d] || {};
+
+      const done = state.routines.reduce((acc, r) => acc + (checks[r.id] ? 1 : 0), 0);
+      const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+
+      $('doneCountText').textContent = String(done);
+      $('progressText').textContent = `${percent}%`;
+      $('progressBar').style.width = `${percent}%`;
+
+      state.completionByDate[d] = percent;
+
+      if (shouldSave) saveState();
+
+      // streak 표기 업데이트
+      $('streakText').textContent = String(calcStreak());
+      drawChart();
+      computeWeeklyGrowth();
+    }
+
+    $('resetChecksBtn').addEventListener('click', () => {
+      ensureTodayChecks();
+      const d = todayISO();
+      state.routines.forEach(r => state.checksByDate[d][r.id] = false);
+      saveState();
+      renderChecklist();
+      renderHeader();
+      renderChartAndGrowth();
+    });
+
+    $('markAllDoneBtn').addEventListener('click', () => {
+      ensureTodayChecks();
+      const d = todayISO();
+      state.routines.forEach(r => state.checksByDate[d][r.id] = true);
+      saveState();
+      renderChecklist();
+      renderHeader();
+      renderChartAndGrowth();
+    });
+
+    function calcStreak() {
+      // 정의: 해당 날짜의 완료율이 100%면 "완료일"로 인정 (내 시스템이므로 기준은 단순/명확)
+      const completeDates = Object.entries(state.completionByDate)
+        .filter(([,pct]) => (pct ?? 0) >= 100)
+        .map(([date]) => date)
+        .sort();
+
+      if (completeDates.length === 0) return 0;
+
+      const set = new Set(completeDates);
+      let streak = 0;
+      let cursor = todayISO();
+
+      while (set.has(cursor)) {
+        streak++;
+        const prev = new Date(cursor + 'T00:00:00');
+        prev.setDate(prev.getDate() - 1);
+        cursor = prev.toISOString().slice(0,10);
+      }
+      return streak;
+    }
+
+    // ---------------------------
+    // 성장 로그 + 차트 + 성장률
+    // ---------------------------
+    function getTodayLog() {
+      const d = todayISO();
+      state.logsByDate[d] = state.logsByDate[d] || {
+        learned: '',
+        hard: '',
+        proud: '',
+        deltaGrowth: 5,
+        bestMoment: ''
+      };
+      return state.logsByDate[d];
+    }
+
+    function renderLogs() {
+      const log = getTodayLog();
+      $('logLearned').value = log.learned || '';
+      $('logHard').value = log.hard || '';
+      $('logProud').value = log.proud || '';
+      $('deltaGrowth').value = String(log.deltaGrowth ?? 5);
+      $('bestMoment').value = log.bestMoment || '';
+    }
+
+    function bindLogInputs() {
+      const fields = [
+        ['logLearned','learned'],
+        ['logHard','hard'],
+        ['logProud','proud'],
+        ['deltaGrowth','deltaGrowth'],
+        ['bestMoment','bestMoment']
+      ];
+      fields.forEach(([id, key]) => {
+        $(id).addEventListener('input', (e) => {
+          const log = getTodayLog();
+          log[key] = (key === 'deltaGrowth')
+            ? (parseInt(e.target.value || '0', 10) || 0)
+            : e.target.value;
+          saveState();
+        });
+      });
+    }
+
+    function lastNDates(n=7) {
+      const out = [];
+      const d = new Date(todayISO() + 'T00:00:00');
+      for (let i = n-1; i >= 0; i--) {
+        const x = new Date(d);
+        x.setDate(x.getDate() - i);
+        out.push(x.toISOString().slice(0,10));
+      }
+      return out;
+    }
+
+    function drawChart() {
+      const canvas = $('chart');
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0,0,W,H);
+
+      // 배경
+      ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'rgba(2,6,23,.5)' : 'rgba(255,255,255,.85)';
+      ctx.fillRect(0,0,W,H);
+
+      const dates = lastNDates(7);
+      const values = dates.map(d => state.completionByDate[d] ?? 0);
+
+      // 축/가이드
+      ctx.strokeStyle = document.documentElement.classList.contains('dark') ? 'rgba(148,163,184,.25)' : 'rgba(100,116,139,.25)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = 20 + (H - 60) * (i / 4);
+        ctx.beginPath();
+        ctx.moveTo(36, y);
+        ctx.lineTo(W - 16, y);
+        ctx.stroke();
+      }
+
+      const chartX0 = 36, chartY0 = 20, chartW = W - 52, chartH = H - 60;
+
+      // 라인
+      const step = chartW / (values.length - 1);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = document.documentElement.classList.contains('dark') ? 'rgba(99,102,241,.95)' : 'rgba(79,70,229,.95)';
+      ctx.beginPath();
+      values.forEach((v, i) => {
+        const x = chartX0 + step * i;
+        const y = chartY0 + chartH * (1 - v/100);
+        if (i === 0) ctx.moveTo(x,y);
+        else ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+
+      // 점
+      values.forEach((v, i) => {
+        const x = chartX0 + step * i;
+        const y = chartY0 + chartH * (1 - v/100);
+        ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,.9)' : 'rgba(15,23,42,.9)';
+        ctx.beginPath();
+        ctx.arc(x,y,4,0,Math.PI*2);
+        ctx.fill();
+      });
+
+      // 라벨 (간단)
+      ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'rgba(203,213,225,.8)' : 'rgba(51,65,85,.8)';
+      ctx.font = '12px system-ui, -apple-system, Segoe UI, sans-serif';
+      ctx.fillText('0%', 6, chartY0 + chartH + 4);
+      ctx.fillText('100%', 2, chartY0 + 10);
+
+      // 날짜 아래 2개만 표시
+      const left = dates[0].slice(5);
+      const right = dates[dates.length-1].slice(5);
+      ctx.fillText(left, chartX0, H - 18);
+      ctx.fillText(right, W - 60, H - 18);
+    }
+
+    function computeWeeklyGrowth() {
+      const dates = lastNDates(7);
+      const values = dates.map(d => state.completionByDate[d] ?? 0);
+      const avg = values.reduce((a,b) => a+b, 0) / values.length;
+      $('weeklyGrowthText').textContent = String(Math.round(avg));
+    }
+
+    function renderChartAndGrowth() {
+      drawChart();
+      computeWeeklyGrowth();
+    }
+
+    $('recalcWeekBtn').addEventListener('click', () => {
+      renderChartAndGrowth();
+    });
+
+    // ---------------------------
+    // 오답 창고 (이미지는 DataURL로 저장)
+    // ---------------------------
+    async function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = reject;
+        fr.readAsDataURL(file);
+      });
+    }
+
+    function renderMistakes() {
+      const ul = $('mistakeList');
+      ul.innerHTML = '';
+
+      state.mistakes.slice().reverse().forEach((m) => {
+        const li = document.createElement('li');
+        li.className = 'rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/75 dark:bg-slate-950/25 p-3';
+
+        const when = new Date(m.createdAtISO).toLocaleString();
+
+        li.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-extrabold truncate">${escapeHTML(m.title)}</div>
+              <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">${escapeHTML(when)}</div>
+              ${m.note ? `<div class="mt-2 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">${escapeHTML(m.note)}</div>` : ''}
+              ${m.imageDataUrl ? `<img alt="mistake" class="mt-2 rounded-xl border border-slate-200/70 dark:border-slate-800/70" src="${m.imageDataUrl}">` : ''}
+            </div>
+            <button data-id="${m.id}" class="deleteMistakeBtn shrink-0 text-xs font-bold text-slate-500 hover:text-rose-600 dark:hover:text-rose-400">삭제</button>
+          </div>
+        `;
+        ul.appendChild(li);
+      });
+
+      ul.querySelectorAll('.deleteMistakeBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          state.mistakes = state.mistakes.filter(x => x.id !== id);
+          saveState();
+          renderMistakes();
+        });
+      });
+    }
+
+    $('addMistakeBtn').addEventListener('click', async () => {
+      const title = $('mistakeTitle').value.trim();
+      const note = $('mistakeNote').value.trim();
+      const file = $('mistakeImage').files && $('mistakeImage').files[0];
+
+      if (!title && !note && !file) return;
+
+      const imageDataUrl = file ? await fileToDataUrl(file) : '';
+
+      state.mistakes.push({
+        id: uid('mistake'),
+        title: title || '(제목 없음)',
+        note,
+        imageDataUrl,
+        createdAtISO: new Date().toISOString()
+      });
+
+      $('mistakeTitle').value = '';
+      $('mistakeNote').value = '';
+      $('mistakeImage').value = '';
+
+      saveState();
+      renderMistakes();
+    });
+
+    // ---------------------------
+    // 내보내기
+    // ---------------------------
+    $('exportBtn').addEventListener('click', () => {
+      const data = JSON.stringify(state, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `my-system-export-${todayISO()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // ---------------------------
+    // HTML escape
+    // ---------------------------
+    function escapeHTML(str) {
+      return String(str ?? '')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    // ---------------------------
+    // 초기 렌더 + 바인딩
+    // ---------------------------
+    function boot() {
+      applyTheme();
+
+      // 상단
+      renderHeader();
+
+      // 루틴/체크/스택
+      renderRoutines();
+      renderStacks();
+      renderChecklist();
+
+      // 타임라인/포모도로
+      renderTimeline();
+      syncPomoUI();
+
+      // 로그/차트/오답
+      renderLogs();
+      bindLogInputs();
+      renderChartAndGrowth();
+      renderMistakes();
+
+      // 포모도로 복구 (페이지 새로고침 시)
+      if (state.pomo.isRunning) startPomo();
+
+      // 헤더 날짜는 실시간 갱신(자정 넘어가면)
+      setInterval(() => {
+        const now = new Date();
+        $('todayText').textContent = `오늘: ${formatKDate(now)}`;
+      }, 30_000);
+    }
+
+    boot();
+  </script>
+</body>
+</html>
